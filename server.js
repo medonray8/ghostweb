@@ -13,6 +13,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 console.log('[*] Iniciando servidor...');
 
+// Rota raiz
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Health check
 app.get('/health', (req, res) => {
     res.send('OK');
