@@ -13,9 +13,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 console.log('[*] Iniciando servidor...');
 
-// Rota raiz
+// Rota raiz - serve index.html (pode estar em raiz ou em public/)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    const filePath = path.join(__dirname, 'public', 'index.html');
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            // Se não encontrar em public/, tenta na raiz
+            res.sendFile(path.join(__dirname, 'index.html'));
+        }
+    });
 });
 
 // Health check
