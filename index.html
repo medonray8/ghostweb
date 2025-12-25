@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostWeb Discloud - Painel Remoto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 100%);
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-left: 4px solid #00ffff;
+            padding-left: 20px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .header p {
+            color: #00ffff;
+            margin-top: 5px;
+        }
+
+        .status-box {
+            background: rgba(0, 20, 20, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .dot.online {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .section-title {
+            color: #00ff00;
+            font-size: 1.2em;
+            margin: 20px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #00ff00;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #00ff00, #00dd00);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #00dd00, #00aa00);
+            box-shadow: 0 0 20px #00ff00;
+            transform: scale(1.05);
+        }
+
+        .btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .log-container {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #00ffff;
+            padding-left: 10px;
+            font-size: 0.85em;
+        }
+
+        .log-entry.success {
+            color: #00ff00;
+            border-left-color: #00ff00;
+        }
+
+        .log-entry.error {
+            color: #ff3333;
+            border-left-color: #ff3333;
+        }
+
+        .log-entry.info {
+            color: #00aaff;
+            border-left-color: #00aaff;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ffff;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👻 GhostWeb</h1>
+            <p>Painel Remoto - Discloud</p>
+        </div>
+
+        <div class="status-box">
+            <div class="status-indicator">
+                <div class="dot" id="statusDot"></div>
+                <span id="statusText">Carregando...</span>
+            </div>
+        </div>
+
+        <div class="section-title">🎯 Comandos</div>
+        
+        <div class="button-group">
+            <button class="btn" onclick="executarComando('aob')">🔥 INJETAR AoB</button>
+            <button class="btn" onclick="executarComando('explorer')">📁 Explorer</button>
+            <button class="btn" onclick="executarComando('clearcache')">🧹 Limpar Cache</button>
+            <button class="btn" onclick="atualizarStatus()">🔄 Atualizar</button>
+        </div>
+
+        <div class="log-container" id="logContainer">
+            <div class="log-entry info">Conectando...</div>
+        </div>
+    </div>
+
+    <script>
+        let statusInterval = null;
+
+        function executarComando(cmd) {
+            adicionarLog(`Enviando comando: ${cmd}...`, 'info');
+            
+            fetch('/api/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: cmd })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'OK') {
+                    adicionarLog(`✓ ${data.message || `Comando ${cmd} enfileirado`}`, 'success');
+                } else {
+                    adicionarLog(`✗ ${data.message || 'Erro ao executar comando'}`, 'error');
+                }
+            })
+            .catch(err => {
+                adicionarLog(`✗ Erro: ${err.message}`, 'error');
+            });
+        }
+
+        function atualizarStatus() {
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    const agentOnline = data.agent === 'online';
+                    document.getElementById('statusDot').className = agentOnline ? 'dot online' : 'dot';
+                    document.getElementById('statusText').textContent = 
+                        `Servidor: ${data.server} | Agente: ${data.agent.toUpperCase()}`;
+                    
+                    if (agentOnline) {
+                        adicionarLog('✓ Agente online', 'success');
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('statusDot').className = 'dot';
+                    document.getElementById('statusText').textContent = 'Erro ao conectar';
+                });
+        }
+
+        function adicionarLog(msg, tipo = 'info') {
+            const log = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${tipo}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Inicializar
+        window.addEventListener('load', () => {
+            adicionarLog('✓ Dashboard carregado', 'success');
+            atualizarStatus();
+            // Atualizar status a cada 5 segundos
+            statusInterval = setInterval(atualizarStatus, 5000);
+        });
+    </script>
+</body>
+</html>
